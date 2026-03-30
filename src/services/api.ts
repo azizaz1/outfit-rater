@@ -1,0 +1,28 @@
+import axios from 'axios';
+import { ApiResponse } from '../types';
+
+// Change this to your backend URL when deployed
+const API_BASE_URL = 'http://192.168.1.19:3002';
+
+export async function rateOutfit(photoUri: string, language: string = 'English', occasion: string = 'Casual'): Promise<ApiResponse> {
+  const formData = new FormData();
+  formData.append('photo', {
+    uri: photoUri,
+    type: 'image/jpeg',
+    name: 'outfit.jpg',
+  } as any);
+  formData.append('language', language);
+  formData.append('occasion', occasion);
+
+  const response = await axios.post(`${API_BASE_URL}/api/rate-outfit`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 30000,
+  });
+
+  return response.data;
+}
+
+export async function getHistory(): Promise<ApiResponse[]> {
+  const response = await axios.get(`${API_BASE_URL}/api/history`);
+  return response.data;
+}
