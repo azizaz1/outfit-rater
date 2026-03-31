@@ -17,6 +17,7 @@ import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { rateOutfit } from '../services/api';
+import { supabase } from '../services/supabase';
 import { RootStackParamList } from '../../App';
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -96,6 +97,9 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={() => supabase.auth.signOut()}>
+            <Text style={styles.logoutText}>Sign Out</Text>
+          </TouchableOpacity>
           <View style={styles.logoWrapper}>
             <LinearGradient colors={['#7C3AED', '#EC4899']} style={styles.logoRing}>
               <Image source={require('../../assets/icon.png')} style={styles.logo} />
@@ -255,6 +259,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   subtitle: { fontSize: 12, color: '#475569', letterSpacing: 2.5, fontWeight: '600' },
+  logoutBtn: { position: 'absolute', top: 0, right: 0 },
+  logoutText: { color: '#334155', fontSize: 13, fontWeight: '600' },
 
   sectionLabel: {
     fontSize: 10,

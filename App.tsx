@@ -3,8 +3,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Session } from '@supabase/supabase-js';
+import { supabase } from './src/services/supabase';
 import { OutfitRating } from './src/types';
 
+import AuthScreen from './src/screens/AuthScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ResultsScreen from './src/screens/ResultsScreen';
@@ -35,14 +38,39 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [initialRoute, setInitialRoute] = useState<'Onboarding' | 'Home' | null>(null);
 
   useEffect(() => {
-    AsyncStorage.getItem('onboarded').then((value) => {
-      setInitialRoute(value === 'true' ? 'Home' : 'Onboarding');
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
     });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (session) {
+      AsyncStorage.getItem('onboarded').then((value) => {
+        setInitialRoute(value === 'true' ? 'Home' : 'Onboarding');
+      });
+    }
+  }, [session]);
+
+  // Still loading
+  if (session === undefined) return null;
+
+  // Not logged in
+  if (!session) return (
+    <>
+      <StatusBar style="light" />
+      <AuthScreen />
+    </>
+  );
+
+  // Logged in but route not determined yet
   if (!initialRoute) return null;
 
   return (
