@@ -8,6 +8,8 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -40,6 +42,9 @@ export default function HomeScreen() {
   const [loading, setLoading] = React.useState(false);
   const [language, setLanguage] = React.useState('English');
   const [occasion, setOccasion] = React.useState('Casual');
+  const [langOpen, setLangOpen] = React.useState(false);
+
+  const selectedLang = LANGUAGES.find((l) => l.code === language)!
 
   async function pickImage(useCamera: boolean) {
     const permission = useCamera
@@ -100,31 +105,54 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>AI-powered style analysis</Text>
         </View>
 
-        {/* Language */}
+        {/* Language dropdown */}
         <Text style={styles.sectionLabel}>LANGUAGE</Text>
-        <View style={styles.row}>
-          {LANGUAGES.map((l) => (
-            <TouchableOpacity
-              key={l.code}
-              style={[styles.chip, language === l.code && styles.chipActive]}
-              onPress={() => setLanguage(l.code)}
-              activeOpacity={0.75}
-            >
-              {language === l.code && (
-                <LinearGradient
-                  colors={['rgba(124,58,237,0.35)', 'rgba(236,72,153,0.35)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={StyleSheet.absoluteFill}
-                />
-              )}
-              <Text style={styles.chipFlag}>{l.flag}</Text>
-              <Text style={[styles.chipText, language === l.code && styles.chipTextActive]}>
-                {l.code}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <TouchableOpacity
+          style={styles.dropdown}
+          onPress={() => setLangOpen(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.dropdownFlag}>{selectedLang.flag}</Text>
+          <Text style={styles.dropdownValue}>{selectedLang.code}</Text>
+          <Text style={styles.dropdownArrow}>▾</Text>
+        </TouchableOpacity>
+
+        {/* Language modal */}
+        <Modal visible={langOpen} transparent animationType="fade" onRequestClose={() => setLangOpen(false)}>
+          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setLangOpen(false)}>
+            <View style={styles.modalSheet}>
+              <Text style={styles.modalTitle}>SELECT LANGUAGE</Text>
+              <FlatList
+                data={LANGUAGES}
+                keyExtractor={(l) => l.code}
+                renderItem={({ item }) => {
+                  const active = item.code === language;
+                  return (
+                    <TouchableOpacity
+                      style={[styles.modalOption, active && styles.modalOptionActive]}
+                      onPress={() => { setLanguage(item.code); setLangOpen(false); }}
+                      activeOpacity={0.75}
+                    >
+                      {active && (
+                        <LinearGradient
+                          colors={['rgba(124,58,237,0.2)', 'rgba(236,72,153,0.2)']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={StyleSheet.absoluteFill}
+                        />
+                      )}
+                      <Text style={styles.modalOptionFlag}>{item.flag}</Text>
+                      <Text style={[styles.modalOptionText, active && styles.modalOptionTextActive]}>
+                        {item.code}
+                      </Text>
+                      {active && <Text style={styles.modalCheck}>✓</Text>}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         {/* Occasion */}
         <Text style={styles.sectionLabel}>OCCASION</Text>
@@ -236,21 +264,60 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  row: { flexDirection: 'row', gap: 8, marginBottom: 28 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 36 },
-
-  chip: {
+  dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderColor: 'rgba(168,85,247,0.35)',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 28,
+    gap: 12,
+  },
+  dropdownFlag: { fontSize: 22 },
+  dropdownValue: { flex: 1, color: '#E2E8F0', fontSize: 16, fontWeight: '700' },
+  dropdownArrow: { color: '#7C3AED', fontSize: 16 },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#12101E',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 20,
+    paddingBottom: 48,
+    borderTopWidth: 1,
+    borderColor: 'rgba(168,85,247,0.25)',
+  },
+  modalTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#475569',
+    letterSpacing: 2.5,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    gap: 16,
     overflow: 'hidden',
   },
+  modalOptionActive: {},
+  modalOptionFlag: { fontSize: 26 },
+  modalOptionText: { flex: 1, color: '#94A3B8', fontSize: 17, fontWeight: '600' },
+  modalOptionTextActive: { color: '#E2E8F0', fontWeight: '800' },
+  modalCheck: { color: '#A855F7', fontSize: 18, fontWeight: '800' },
+
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 36 },
+
   occasionChip: {
     flexDirection: 'row',
     alignItems: 'center',
