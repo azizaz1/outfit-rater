@@ -9,6 +9,7 @@ import {
   Animated,
   Linking,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -16,33 +17,10 @@ import { RootStackParamList } from '../../App';
 
 type ResultsRouteProp = RouteProp<RootStackParamList, 'Results'>;
 
-function AnimatedScore({ score, delay = 0 }: { score: number; delay?: number }) {
-  const animated = useRef(new Animated.Value(0)).current;
-  const [display, setDisplay] = React.useState(0);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      Animated.timing(animated, {
-        toValue: score,
-        duration: 1000,
-        useNativeDriver: false,
-      }).start();
-    }, delay);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  useEffect(() => {
-    const listener = animated.addListener(({ value }) => setDisplay(Math.round(value * 10) / 10));
-    return () => animated.removeListener(listener);
-  }, []);
-
-  return display;
-}
-
 function ScoreRing({ score }: { score: number }) {
-  const color = score >= 8 ? '#4CAF50' : score >= 6 ? '#FFC107' : '#F44336';
   const animated = useRef(new Animated.Value(0)).current;
   const [display, setDisplay] = React.useState(0);
+  const color = score >= 8 ? '#4ADE80' : score >= 6 ? '#FACC15' : '#F87171';
 
   useEffect(() => {
     Animated.timing(animated, {
@@ -57,7 +35,7 @@ function ScoreRing({ score }: { score: number }) {
   }, []);
 
   return (
-    <View style={[styles.scoreRing, { borderColor: color }]}>
+    <View style={[styles.scoreRing, { borderColor: color, shadowColor: color }]}>
       <Text style={[styles.scoreNumber, { color }]}>{display.toFixed(1)}</Text>
       <Text style={styles.scoreLabel}>/ 10</Text>
     </View>
@@ -66,19 +44,18 @@ function ScoreRing({ score }: { score: number }) {
 
 function AnimatedBar({ value, delay = 0 }: { value: number; delay?: number }) {
   const width = useRef(new Animated.Value(0)).current;
+  const color = value >= 8 ? '#4ADE80' : value >= 6 ? '#FACC15' : '#F87171';
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const t = setTimeout(() => {
       Animated.timing(width, {
         toValue: (value / 10) * 100,
         duration: 900,
         useNativeDriver: false,
       }).start();
     }, delay);
-    return () => clearTimeout(timeout);
+    return () => clearTimeout(t);
   }, []);
-
-  const color = value >= 8 ? '#4CAF50' : value >= 6 ? '#FFC107' : '#F44336';
 
   return (
     <View style={styles.barTrack}>
@@ -88,6 +65,7 @@ function AnimatedBar({ value, delay = 0 }: { value: number; delay?: number }) {
           {
             width: width.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }),
             backgroundColor: color,
+            shadowColor: color,
           },
         ]}
       />
@@ -98,9 +76,10 @@ function AnimatedBar({ value, delay = 0 }: { value: number; delay?: number }) {
 function SubScoreRow({ label, value, delay }: { label: string; value: number; delay: number }) {
   const animated = useRef(new Animated.Value(0)).current;
   const [display, setDisplay] = React.useState(0);
+  const color = value >= 8 ? '#4ADE80' : value >= 6 ? '#FACC15' : '#F87171';
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
+    const t = setTimeout(() => {
       Animated.timing(animated, {
         toValue: value,
         duration: 900,
@@ -109,7 +88,7 @@ function SubScoreRow({ label, value, delay }: { label: string; value: number; de
     }, delay);
     const listener = animated.addListener(({ value: v }) => setDisplay(Math.round(v * 10) / 10));
     return () => {
-      clearTimeout(timeout);
+      clearTimeout(t);
       animated.removeListener(listener);
     };
   }, []);
@@ -118,7 +97,7 @@ function SubScoreRow({ label, value, delay }: { label: string; value: number; de
     <View style={styles.subScoreRow}>
       <View style={styles.subScoreHeader}>
         <Text style={styles.subScoreLabel}>{label}</Text>
-        <Text style={styles.subScoreValue}>{display.toFixed(1)}/10</Text>
+        <Text style={[styles.subScoreValue, { color }]}>{display.toFixed(1)}/10</Text>
       </View>
       <AnimatedBar value={value} delay={delay} />
     </View>
@@ -130,285 +109,310 @@ export default function ResultsScreen() {
   const navigation = useNavigation();
   const { rating, photoUri } = route.params;
   const cardRef = useRef<ViewShot>(null);
-
   const fadeIn = useRef(new Animated.Value(0)).current;
+  const slideUp = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(slideUp, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
   async function shareCard() {
     try {
       const uri = await cardRef.current!.capture!();
       await Sharing.shareAsync(uri, { mimeType: 'image/png' });
-    } catch {
-      // fallback
-    }
-  }
-
-  useEffect(() => {
-    Animated.timing(fadeIn, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  async function shareResult() {
-    await Share.share({
-      message: `I got ${rating.score}/10 on AI Outfit Rater! Style: ${rating.styleCategory}. Try it yourself!`,
-    });
+    } catch {}
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Image source={{ uri: photoUri }} style={styles.photo} />
-
-      <Animated.View style={[styles.scoreContainer, { opacity: fadeIn }]}>
-        <ScoreRing score={rating.score} />
-        <View style={styles.scoreDetails}>
-          <Text style={styles.styleCategory}>{rating.styleCategory}</Text>
-          <Text style={styles.occasion}>{rating.occasionFit}</Text>
-        </View>
-      </Animated.View>
-
-      <Animated.View style={[styles.subScores, { opacity: fadeIn }]}>
-        <SubScoreRow label="Colors" value={rating.colorScore} delay={200} />
-        <SubScoreRow label="Fit" value={rating.fitScore} delay={400} />
-      </Animated.View>
-
-      {rating.weatherTip && (
-        <View style={styles.weatherCard}>
-          <Text style={styles.weatherLabel}>🌤️ Weather Check</Text>
-          <Text style={styles.weatherText}>{rating.weatherTip}</Text>
-        </View>
-      )}
-
-      {rating.celebrityMatch && (
-        <View style={styles.celebrityCard}>
-          <Text style={styles.celebrityLabel}>Your style matches</Text>
-          <Text style={styles.celebrityName}>⭐ {rating.celebrityMatch}</Text>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>What Works</Text>
-        {rating.strengths.map((s, i) => (
-          <View key={i} style={styles.feedbackRow}>
-            <Text style={styles.checkmark}>✅</Text>
-            <Text style={styles.feedbackText}>{s}</Text>
+      {/* Hero photo with gradient overlay */}
+      <View style={styles.heroContainer}>
+        <Image source={{ uri: photoUri }} style={styles.photo} />
+        <LinearGradient
+          colors={['transparent', 'rgba(8,8,16,0.7)', '#080810']}
+          style={styles.photoGradient}
+        />
+        {/* Floating score ring */}
+        <Animated.View style={[styles.scoreFloat, { opacity: fadeIn }]}>
+          <ScoreRing score={rating.score} />
+          <View style={styles.scoreDetails}>
+            <Text style={styles.styleCategory}>{rating.styleCategory}</Text>
+            <Text style={styles.occasion}>{rating.occasionFit}</Text>
           </View>
-        ))}
+        </Animated.View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Room to Improve</Text>
-        {rating.improvements.map((s, i) => (
-          <View key={i} style={styles.feedbackRow}>
-            <Text style={styles.checkmark}>💡</Text>
-            <Text style={styles.feedbackText}>{s}</Text>
-          </View>
-        ))}
-      </View>
-
-      {rating.shoppingSuggestions && rating.shoppingSuggestions.length > 0 && (
+      <Animated.View style={{ opacity: fadeIn, transform: [{ translateY: slideUp }] }}>
+        {/* Sub scores */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🛍️ Shop to Elevate</Text>
-          {rating.shoppingSuggestions.map((s, i) => (
-            <TouchableOpacity
-              key={i}
-              style={styles.shopItem}
-              onPress={() =>
-                Linking.openURL(
-                  `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(s.item)}`
-                )
-              }
-            >
-              <View style={styles.shopInfo}>
-                <Text style={styles.shopItemName}>{s.item}</Text>
-                <Text style={styles.shopItemReason}>{s.reason}</Text>
-              </View>
-              <Text style={styles.shopArrow}>→</Text>
-            </TouchableOpacity>
+          <SubScoreRow label="Color Harmony" value={rating.colorScore} delay={200} />
+          <SubScoreRow label="Fit & Silhouette" value={rating.fitScore} delay={400} />
+        </View>
+
+        {/* Weather tip */}
+        {rating.weatherTip && (
+          <View style={[styles.card, styles.weatherCard]}>
+            <Text style={styles.weatherLabel}>🌤️  WEATHER CHECK</Text>
+            <Text style={styles.weatherText}>{rating.weatherTip}</Text>
+          </View>
+        )}
+
+        {/* Celebrity match */}
+        {rating.celebrityMatch && (
+          <LinearGradient
+            colors={['rgba(124,58,237,0.15)', 'rgba(236,72,153,0.15)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.card, styles.celebCard]}
+          >
+            <Text style={styles.celebLabel}>YOUR STYLE MATCHES</Text>
+            <Text style={styles.celebName}>⭐  {rating.celebrityMatch}</Text>
+          </LinearGradient>
+        )}
+
+        {/* What Works */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>What Works</Text>
+          {rating.strengths.map((s, i) => (
+            <View key={i} style={styles.feedbackRow}>
+              <Text style={styles.feedbackIcon}>✦</Text>
+              <Text style={styles.feedbackText}>{s}</Text>
+            </View>
           ))}
         </View>
-      )}
 
-      {/* Hidden score card for sharing */}
-      <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }} style={styles.hiddenCard}>
-        <View style={styles.scoreCard}>
-          <Image source={{ uri: photoUri }} style={styles.cardPhoto} />
-          <View style={styles.cardOverlay}>
-            <Text style={styles.cardAppName}>AI Outfit Rater</Text>
-            <Text style={styles.cardScore}>{rating.score.toFixed(1)}</Text>
-            <Text style={styles.cardScoreLabel}>/ 10</Text>
-            <Text style={styles.cardStyle}>{rating.styleCategory}</Text>
-            {rating.celebrityMatch ? (
-              <Text style={styles.cardCelebrity}>⭐ {rating.celebrityMatch} vibes</Text>
-            ) : null}
-            <View style={styles.cardBadges}>
-              <View style={styles.cardBadge}>
-                <Text style={styles.cardBadgeText}>Colors {rating.colorScore}/10</Text>
-              </View>
-              <View style={styles.cardBadge}>
-                <Text style={styles.cardBadgeText}>Fit {rating.fitScore}/10</Text>
+        {/* Room to Improve */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Room to Improve</Text>
+          {rating.improvements.map((s, i) => (
+            <View key={i} style={styles.feedbackRow}>
+              <Text style={styles.feedbackIcon}>→</Text>
+              <Text style={styles.feedbackText}>{s}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Shopping */}
+        {rating.shoppingSuggestions && rating.shoppingSuggestions.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>🛍️  Shop to Elevate</Text>
+            {rating.shoppingSuggestions.map((s, i) => (
+              <TouchableOpacity
+                key={i}
+                style={styles.shopItem}
+                onPress={() =>
+                  Linking.openURL(
+                    `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(s.item)}`
+                  )
+                }
+              >
+                <View style={styles.shopInfo}>
+                  <Text style={styles.shopName}>{s.item}</Text>
+                  <Text style={styles.shopReason}>{s.reason}</Text>
+                </View>
+                <LinearGradient colors={['#7C3AED', '#EC4899']} style={styles.shopArrowBadge}>
+                  <Text style={styles.shopArrow}>→</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Hidden card for sharing */}
+        <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }} style={styles.hiddenCard}>
+          <View style={styles.scoreCard}>
+            <Image source={{ uri: photoUri }} style={styles.cardPhoto} />
+            <LinearGradient
+              colors={['transparent', 'rgba(8,8,16,0.85)']}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.cardOverlay}>
+              <Text style={styles.cardAppName}>AI OUTFIT RATER</Text>
+              <Text style={styles.cardScore}>{rating.score.toFixed(1)}</Text>
+              <Text style={styles.cardScoreLabel}>/ 10</Text>
+              <Text style={styles.cardStyle}>{rating.styleCategory}</Text>
+              {rating.celebrityMatch ? (
+                <Text style={styles.cardCelebrity}>⭐ {rating.celebrityMatch} vibes</Text>
+              ) : null}
+              <View style={styles.cardBadges}>
+                <View style={styles.cardBadge}>
+                  <Text style={styles.cardBadgeText}>Colors {rating.colorScore}/10</Text>
+                </View>
+                <View style={styles.cardBadge}>
+                  <Text style={styles.cardBadgeText}>Fit {rating.fitScore}/10</Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
-      </ViewShot>
+        </ViewShot>
 
-      <TouchableOpacity style={styles.shareButton} onPress={shareCard}>
-        <Text style={styles.shareButtonText}>Share Score Card</Text>
-      </TouchableOpacity>
+        {/* Buttons */}
+        <TouchableOpacity onPress={shareCard} activeOpacity={0.85}>
+          <LinearGradient
+            colors={['#7C3AED', '#EC4899']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.primaryBtn}
+          >
+            <Text style={styles.primaryBtnText}>Share Score Card</Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.backButtonText}>Rate Another Outfit</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.outlineBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.outlineBtnText}>Rate Another Outfit</Text>
+        </TouchableOpacity>
+      </Animated.View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F0F1A' },
-  content: { paddingBottom: 40 },
-  weatherCard: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    backgroundColor: '#1A1A2E',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#2A6C8C',
-  },
-  weatherLabel: { color: '#5BC4E8', fontSize: 13, fontWeight: '600', marginBottom: 6 },
-  weatherText: { color: '#D0D0E8', fontSize: 15, lineHeight: 22 },
-  celebrityCard: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-    backgroundColor: '#1A1A2E',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#6C63FF',
-  },
-  celebrityLabel: { color: '#9B9BB4', fontSize: 13, marginBottom: 6 },
-  celebrityName: { color: '#FFFFFF', fontSize: 20, fontWeight: 'bold' },
-  photo: { width: '100%', height: 320, resizeMode: 'cover' },
-  scoreContainer: {
+  container: { flex: 1, backgroundColor: '#080810' },
+  content: { paddingBottom: 48 },
+
+  heroContainer: { height: 380, position: 'relative', marginBottom: 24 },
+  photo: { width: '100%', height: '100%', resizeMode: 'cover' },
+  photoGradient: { ...StyleSheet.absoluteFillObject },
+  scoreFloat: {
+    position: 'absolute',
+    bottom: 20,
+    left: 24,
+    right: 24,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 24,
-    gap: 20,
+    gap: 16,
   },
   scoreRing: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 5,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(8,8,16,0.7)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  scoreNumber: { fontSize: 28, fontWeight: 'bold' },
-  scoreLabel: { color: '#9B9BB4', fontSize: 12 },
+  scoreNumber: { fontSize: 26, fontWeight: '900' },
+  scoreLabel: { color: '#475569', fontSize: 11, fontWeight: '600' },
   scoreDetails: { flex: 1 },
-  styleCategory: { color: '#FFFFFF', fontSize: 22, fontWeight: 'bold' },
-  occasion: { color: '#9B9BB4', fontSize: 14, marginTop: 4 },
-  subScores: {
-    marginHorizontal: 24,
-    marginBottom: 24,
-    gap: 12,
-  },
-  subScoreRow: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 12,
-    padding: 16,
-  },
-  subScoreHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  subScoreValue: { color: '#6C63FF', fontSize: 16, fontWeight: 'bold' },
-  subScoreLabel: { color: '#9B9BB4', fontSize: 14 },
-  barTrack: {
-    height: 6,
-    backgroundColor: '#2A2A3E',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: 6,
-    borderRadius: 3,
-  },
-  section: {
-    marginHorizontal: 24,
-    marginBottom: 20,
-    backgroundColor: '#1A1A2E',
-    borderRadius: 16,
-    padding: 16,
-  },
-  sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+  styleCategory: { color: '#F1F5F9', fontSize: 20, fontWeight: '800', marginBottom: 4 },
+  occasion: { color: '#64748B', fontSize: 13, lineHeight: 18 },
+
+  section: { marginHorizontal: 20, marginBottom: 12, gap: 10 },
+
+  card: {
+    marginHorizontal: 20,
     marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
   },
-  feedbackRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  checkmark: { fontSize: 16 },
-  feedbackText: { color: '#D0D0E8', fontSize: 15, flex: 1, lineHeight: 22 },
+  weatherCard: { borderColor: 'rgba(56,189,248,0.25)' },
+  celebCard: { borderColor: 'rgba(168,85,247,0.3)', alignItems: 'center' },
+
+  weatherLabel: { color: '#38BDF8', fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 8 },
+  weatherText: { color: '#CBD5E1', fontSize: 14, lineHeight: 21 },
+
+  celebLabel: { color: '#9D4EDD', fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 6 },
+  celebName: { color: '#F1F5F9', fontSize: 19, fontWeight: '800' },
+
+  cardTitle: { color: '#F1F5F9', fontSize: 14, fontWeight: '800', letterSpacing: 0.5, marginBottom: 14 },
+  feedbackRow: { flexDirection: 'row', gap: 10, marginBottom: 10, alignItems: 'flex-start' },
+  feedbackIcon: { color: '#7C3AED', fontSize: 12, marginTop: 3, fontWeight: '800' },
+  feedbackText: { color: '#94A3B8', fontSize: 14, flex: 1, lineHeight: 21 },
+
   shopItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F0F1A',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 14,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#2A2A3E',
+    borderColor: 'rgba(255,255,255,0.05)',
+    gap: 12,
   },
   shopInfo: { flex: 1 },
-  shopItemName: { color: '#FFFFFF', fontSize: 15, fontWeight: '600', marginBottom: 2 },
-  shopItemReason: { color: '#9B9BB4', fontSize: 13 },
-  shopArrow: { color: '#6C63FF', fontSize: 18, fontWeight: 'bold' },
+  shopName: { color: '#E2E8F0', fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  shopReason: { color: '#64748B', fontSize: 12 },
+  shopArrowBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shopArrow: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+
+  subScoreRow: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+  },
+  subScoreHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  subScoreLabel: { color: '#64748B', fontSize: 13, fontWeight: '600' },
+  subScoreValue: { fontSize: 14, fontWeight: '800' },
+  barTrack: { height: 5, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' },
+  barFill: { height: 5, borderRadius: 3, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6 },
+
   hiddenCard: { position: 'absolute', top: -9999, left: 0 },
   scoreCard: { width: 360, height: 480, borderRadius: 24, overflow: 'hidden' },
   cardPhoto: { width: '100%', height: '100%', position: 'absolute' },
   cardOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15,15,26,0.78)',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     padding: 24,
+    paddingBottom: 32,
   },
-  cardAppName: { color: '#9B9BB4', fontSize: 13, letterSpacing: 2, marginBottom: 12 },
-  cardScore: { color: '#FFFFFF', fontSize: 72, fontWeight: 'bold', lineHeight: 76 },
-  cardScoreLabel: { color: '#9B9BB4', fontSize: 18, marginBottom: 12 },
-  cardStyle: { color: '#FFFFFF', fontSize: 22, fontWeight: '600', marginBottom: 8, textAlign: 'center' },
-  cardCelebrity: { color: '#6C63FF', fontSize: 15, marginBottom: 16 },
-  cardBadges: { flexDirection: 'row', gap: 10 },
+  cardAppName: { color: '#64748B', fontSize: 11, letterSpacing: 3, marginBottom: 8, fontWeight: '700' },
+  cardScore: { color: '#FFFFFF', fontSize: 72, fontWeight: '900', lineHeight: 76 },
+  cardScoreLabel: { color: '#64748B', fontSize: 16, marginBottom: 10 },
+  cardStyle: { color: '#FFFFFF', fontSize: 20, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
+  cardCelebrity: { color: '#C084FC', fontSize: 14, marginBottom: 16 },
+  cardBadges: { flexDirection: 'row', gap: 8 },
   cardBadge: {
-    backgroundColor: 'rgba(108,99,255,0.3)',
+    backgroundColor: 'rgba(124,58,237,0.4)',
     borderRadius: 20,
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#6C63FF',
+    borderColor: 'rgba(168,85,247,0.5)',
   },
-  cardBadgeText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
-  shareButton: {
-    backgroundColor: '#6C63FF',
-    marginHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 16,
+  cardBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+
+  primaryBtn: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 18,
+    borderRadius: 100,
     alignItems: 'center',
-    marginBottom: 12,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 10,
   },
-  shareButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
-  backButton: {
-    marginHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 16,
+  primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
+  outlineBtn: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 18,
+    borderRadius: 100,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#6C63FF',
+    borderWidth: 1.5,
+    borderColor: 'rgba(168,85,247,0.4)',
+    backgroundColor: 'rgba(168,85,247,0.05)',
   },
-  backButtonText: { color: '#6C63FF', fontSize: 18, fontWeight: '600' },
+  outlineBtnText: { color: '#C084FC', fontSize: 16, fontWeight: '700' },
 });

@@ -51,10 +51,11 @@ export default function App() {
       <Stack.Navigator
         initialRouteName={initialRoute}
         screenOptions={{
-          headerStyle: { backgroundColor: '#0F0F1A' },
-          headerTintColor: '#FFFFFF',
-          headerTitleStyle: { fontWeight: 'bold' },
-          contentStyle: { backgroundColor: '#0F0F1A' },
+          headerStyle: { backgroundColor: '#080810' },
+          headerTintColor: '#F1F5F9',
+          headerTitleStyle: { fontWeight: '800', letterSpacing: 0.5 },
+          headerShadowVisible: false,
+          contentStyle: { backgroundColor: '#080810' },
         }}
       >
         <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />

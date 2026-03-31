@@ -7,7 +7,9 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
@@ -43,16 +45,13 @@ export default function HomeScreen() {
     const permission = useCamera
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
-
     if (!permission.granted) {
       Alert.alert('Permission needed', 'Please allow access to continue.');
       return;
     }
-
     const result = useCamera
       ? await ImagePicker.launchCameraAsync({ quality: 0.8, base64: false })
       : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, base64: false });
-
     if (!result.canceled && result.assets[0]) {
       analyzeOutfit(result.assets[0].uri);
     }
@@ -67,9 +66,7 @@ export default function HomeScreen() {
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
         coords = { lat: loc.coords.latitude, lon: loc.coords.longitude };
       }
-    } catch {
-      // location is optional, continue without it
-    }
+    } catch {}
     try {
       const response = await rateOutfit(uri, language, occasion, coords);
       if (response.success && response.data) {
@@ -87,216 +84,240 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>AI Outfit Rater</Text>
-      <Text style={styles.subtitle}>Get instant AI feedback on your style</Text>
-
-      <Image source={require('../../assets/icon.png')} style={styles.logo} />
-
-      <View style={styles.langContainer}>
-        {LANGUAGES.map((l) => (
-          <TouchableOpacity
-            key={l.code}
-            style={[styles.langButton, language === l.code && styles.langButtonActive]}
-            onPress={() => setLanguage(l.code)}
-          >
-            <Text style={styles.langFlag}>{l.flag}</Text>
-            <Text style={[styles.langText, language === l.code && styles.langTextActive]}>
-              {l.code}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.sectionLabel}>Occasion</Text>
-      <View style={styles.occasionContainer}>
-        {OCCASIONS.map((o) => (
-          <TouchableOpacity
-            key={o.label}
-            style={[styles.occasionButton, occasion === o.label && styles.occasionButtonActive]}
-            onPress={() => setOccasion(o.label)}
-          >
-            <Text style={styles.occasionIcon}>{o.icon}</Text>
-            <Text style={[styles.occasionText, occasion === o.label && styles.occasionTextActive]}>
-              {o.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6C63FF" />
-          <Text style={styles.loadingText}>Analyzing your outfit...</Text>
+      <LinearGradient
+        colors={['rgba(124,58,237,0.18)', 'rgba(8,8,16,0)', 'rgba(8,8,16,0)']}
+        style={styles.bgGlow}
+      />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.logoWrapper}>
+            <LinearGradient colors={['#7C3AED', '#EC4899']} style={styles.logoRing}>
+              <Image source={require('../../assets/icon.png')} style={styles.logo} />
+            </LinearGradient>
+          </View>
+          <Text style={styles.title}>OUTFIT RATER</Text>
+          <Text style={styles.subtitle}>AI-powered style analysis</Text>
         </View>
-      ) : (
-        <>
-          <TouchableOpacity style={styles.primaryButton} onPress={() => pickImage(true)}>
-            <Text style={styles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => pickImage(false)}>
-            <Text style={styles.secondaryButtonText}>Upload from Gallery</Text>
-          </TouchableOpacity>
+        {/* Language */}
+        <Text style={styles.sectionLabel}>LANGUAGE</Text>
+        <View style={styles.row}>
+          {LANGUAGES.map((l) => (
+            <TouchableOpacity
+              key={l.code}
+              style={[styles.chip, language === l.code && styles.chipActive]}
+              onPress={() => setLanguage(l.code)}
+              activeOpacity={0.75}
+            >
+              {language === l.code && (
+                <LinearGradient
+                  colors={['rgba(124,58,237,0.35)', 'rgba(236,72,153,0.35)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              )}
+              <Text style={styles.chipFlag}>{l.flag}</Text>
+              <Text style={[styles.chipText, language === l.code && styles.chipTextActive]}>
+                {l.code}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-          <TouchableOpacity style={styles.compareButton} onPress={() => navigation.navigate('Comparison')}>
-            <Text style={styles.compareButtonText}>⚔️ Compare Two Outfits</Text>
-          </TouchableOpacity>
+        {/* Occasion */}
+        <Text style={styles.sectionLabel}>OCCASION</Text>
+        <View style={styles.wrap}>
+          {OCCASIONS.map((o) => (
+            <TouchableOpacity
+              key={o.label}
+              style={[styles.occasionChip, occasion === o.label && styles.chipActive]}
+              onPress={() => setOccasion(o.label)}
+              activeOpacity={0.75}
+            >
+              {occasion === o.label && (
+                <LinearGradient
+                  colors={['rgba(124,58,237,0.35)', 'rgba(236,72,153,0.35)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              )}
+              <Text style={styles.chipFlag}>{o.icon}</Text>
+              <Text style={[styles.chipText, occasion === o.label && styles.chipTextActive]}>
+                {o.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-          <TouchableOpacity style={styles.historyButton} onPress={() => navigation.navigate('History')}>
-            <Text style={styles.historyButtonText}>View Past Ratings</Text>
-          </TouchableOpacity>
-        </>
-      )}
+        {/* Action */}
+        {loading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color="#A855F7" />
+            <Text style={styles.loadingText}>Analyzing your style...</Text>
+          </View>
+        ) : (
+          <View style={styles.buttons}>
+            <TouchableOpacity onPress={() => pickImage(true)} activeOpacity={0.85}>
+              <LinearGradient
+                colors={['#7C3AED', '#EC4899']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.primaryBtn}
+              >
+                <Text style={styles.primaryBtnIcon}>📸</Text>
+                <Text style={styles.primaryBtnText}>Take Photo</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.outlineBtn}
+              onPress={() => pickImage(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.outlineBtnText}>Upload from Gallery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.ghostBtn}
+              onPress={() => navigation.navigate('Comparison')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.ghostBtnText}>⚔️  Compare Two Outfits</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('History')}>
+              <Text style={styles.historyLink}>View Past Ratings</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F0F1A',
+  container: { flex: 1, backgroundColor: '#080810' },
+  bgGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 380 },
+  scroll: { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 48 },
+
+  header: { alignItems: 'center', marginBottom: 44 },
+  logoWrapper: { marginBottom: 20 },
+  logoRing: {
+    width: 108,
+    height: 108,
+    borderRadius: 30,
+    padding: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 24,
+    elevation: 12,
   },
+  logo: { width: 102, height: 102, borderRadius: 28 },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#F1F5F9',
+    letterSpacing: 5,
+    marginBottom: 6,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#9B9BB4',
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 24,
-    marginBottom: 30,
-  },
-  langContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 24,
-  },
-  langButton: {
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A3E',
-    backgroundColor: '#1A1A2E',
-  },
-  langButtonActive: {
-    borderColor: '#6C63FF',
-    backgroundColor: '#2A2040',
-  },
-  langFlag: {
-    fontSize: 18,
-    marginBottom: 2,
-  },
-  langText: {
-    color: '#9B9BB4',
-    fontSize: 11,
-  },
-  langTextActive: {
-    color: '#6C63FF',
-    fontWeight: '600',
-  },
-  primaryButton: {
-    backgroundColor: '#6C63FF',
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    borderColor: '#6C63FF',
-    borderWidth: 2,
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  secondaryButtonText: {
-    color: '#6C63FF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  compareButton: {
-    borderColor: '#2A2A3E',
-    borderWidth: 2,
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 12,
-    backgroundColor: '#1A1A2E',
-  },
-  compareButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  historyButton: {
-    padding: 12,
-  },
-  historyButtonText: {
-    color: '#9B9BB4',
-    fontSize: 16,
-    textDecorationLine: 'underline',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    color: '#9B9BB4',
-    fontSize: 16,
-  },
+  subtitle: { fontSize: 12, color: '#475569', letterSpacing: 2.5, fontWeight: '600' },
+
   sectionLabel: {
-    color: '#9B9BB4',
-    fontSize: 13,
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-    marginTop: 4,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#475569',
+    letterSpacing: 2.5,
+    marginBottom: 10,
   },
-  occasionContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 24,
-  },
-  occasionButton: {
+
+  row: { flexDirection: 'row', gap: 8, marginBottom: 28 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 36 },
+
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 20,
+    borderRadius: 100,
     borderWidth: 1,
-    borderColor: '#2A2A3E',
-    backgroundColor: '#1A1A2E',
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    overflow: 'hidden',
   },
-  occasionButtonActive: {
-    borderColor: '#6C63FF',
-    backgroundColor: '#2A2040',
+  occasionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    overflow: 'hidden',
   },
-  occasionIcon: { fontSize: 15 },
-  occasionText: { color: '#9B9BB4', fontSize: 13 },
-  occasionTextActive: { color: '#6C63FF', fontWeight: '600' },
+  chipActive: {
+    borderColor: 'rgba(168,85,247,0.55)',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  chipFlag: { fontSize: 15 },
+  chipText: { color: '#475569', fontSize: 12, fontWeight: '700' },
+  chipTextActive: { color: '#C084FC' },
+
+  loadingBox: { alignItems: 'center', gap: 16, paddingVertical: 40 },
+  loadingText: { color: '#64748B', fontSize: 15, letterSpacing: 0.5 },
+
+  buttons: { gap: 12 },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 19,
+    borderRadius: 100,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  primaryBtnIcon: { fontSize: 18 },
+  primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800', letterSpacing: 0.5 },
+  outlineBtn: {
+    paddingVertical: 19,
+    borderRadius: 100,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(168,85,247,0.45)',
+    backgroundColor: 'rgba(168,85,247,0.06)',
+  },
+  outlineBtnText: { color: '#C084FC', fontSize: 16, fontWeight: '700' },
+  ghostBtn: {
+    paddingVertical: 19,
+    borderRadius: 100,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  ghostBtnText: { color: '#64748B', fontSize: 15, fontWeight: '600' },
+  historyLink: {
+    color: '#475569',
+    fontSize: 14,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+    paddingVertical: 8,
+    letterSpacing: 0.3,
+  },
 });
