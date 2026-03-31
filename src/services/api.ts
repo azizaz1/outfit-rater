@@ -17,6 +17,7 @@ export async function rateOutfit(
 ): Promise<ApiResponse> {
   const formData = new FormData();
   formData.append('photo', { uri: photoUri, type: 'image/jpeg', name: 'outfit.jpg' } as any);
+  formData.append('photoUri', photoUri);
   formData.append('language', language);
   formData.append('occasion', occasion);
   if (coords) {
