@@ -127,6 +127,10 @@ export default function HomeScreen() {
             <Text style={styles.secondaryButtonText}>Upload from Gallery</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.compareButton} onPress={() => navigation.navigate('Comparison')}>
+            <Text style={styles.compareButtonText}>⚔️ Compare Two Outfits</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.historyButton} onPress={() => navigation.navigate('History')}>
             <Text style={styles.historyButtonText}>View Past Ratings</Text>
           </TouchableOpacity>
@@ -219,6 +223,22 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: '#6C63FF',
     fontSize: 18,
+    fontWeight: '600',
+  },
+  compareButton: {
+    borderColor: '#2A2A3E',
+    borderWidth: 2,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 16,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 12,
+    backgroundColor: '#1A1A2E',
+  },
+  compareButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
   },
   historyButton: {

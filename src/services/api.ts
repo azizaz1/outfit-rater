@@ -26,3 +26,23 @@ export async function getHistory(): Promise<ApiResponse[]> {
   const response = await axios.get(`${API_BASE_URL}/api/history`);
   return response.data;
 }
+
+export async function compareOutfits(
+  photoUri1: string,
+  photoUri2: string,
+  language: string = 'English',
+  occasion: string = 'Casual'
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  const formData = new FormData();
+  formData.append('photo1', { uri: photoUri1, type: 'image/jpeg', name: 'outfit1.jpg' } as any);
+  formData.append('photo2', { uri: photoUri2, type: 'image/jpeg', name: 'outfit2.jpg' } as any);
+  formData.append('language', language);
+  formData.append('occasion', occasion);
+
+  const response = await axios.post(`${API_BASE_URL}/api/compare`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 45000,
+  });
+
+  return response.data;
+}
