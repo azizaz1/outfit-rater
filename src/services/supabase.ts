@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 
 const SUPABASE_URL = 'https://llxtmhlcplmozillwgdl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxseHRtaGxjcGxtb3ppbGx3Z2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NDI0NTcsImV4cCI6MjA1OTAxODQ1N30.bfMbHVD3OAZXFbniPyvsMJjDSr_VIVouFJRO6hLFVRw';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxseHRtaGxjcGxtb3ppbGx3Z2RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NzQyODIsImV4cCI6MjA5MDQ1MDI4Mn0.ukGofCuOyjaKokZn996yZiA5tV1HT7OUufRUzM4nraA';
 
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
