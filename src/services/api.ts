@@ -2,7 +2,7 @@ import axios from 'axios';
 import { ApiResponse } from '../types';
 import { supabase } from './supabase';
 
-const API_BASE_URL = 'http://192.168.1.19:3002';
+const API_BASE_URL = 'https://outfit-rater-backend-production.up.railway.app';
 
 async function authHeaders() {
   const { data: { session } } = await supabase.auth.getSession();
