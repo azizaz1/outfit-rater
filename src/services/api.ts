@@ -4,7 +4,12 @@ import { ApiResponse } from '../types';
 // Change this to your backend URL when deployed
 const API_BASE_URL = 'http://192.168.1.19:3002';
 
-export async function rateOutfit(photoUri: string, language: string = 'English', occasion: string = 'Casual'): Promise<ApiResponse> {
+export async function rateOutfit(
+  photoUri: string,
+  language: string = 'English',
+  occasion: string = 'Casual',
+  coords?: { lat: number; lon: number }
+): Promise<ApiResponse> {
   const formData = new FormData();
   formData.append('photo', {
     uri: photoUri,
@@ -13,6 +18,10 @@ export async function rateOutfit(photoUri: string, language: string = 'English',
   } as any);
   formData.append('language', language);
   formData.append('occasion', occasion);
+  if (coords) {
+    formData.append('lat', String(coords.lat));
+    formData.append('lon', String(coords.lon));
+  }
 
   const response = await axios.post(`${API_BASE_URL}/api/rate-outfit`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

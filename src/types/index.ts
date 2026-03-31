@@ -10,6 +10,7 @@ export interface OutfitRating {
   improvements: string[];
   celebrityMatch?: string;
   shoppingSuggestions?: { item: string; reason: string }[];
+  weatherTip?: string;
   createdAt?: string;
 }
 

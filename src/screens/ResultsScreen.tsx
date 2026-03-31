@@ -173,6 +173,13 @@ export default function ResultsScreen() {
         <SubScoreRow label="Fit" value={rating.fitScore} delay={400} />
       </Animated.View>
 
+      {rating.weatherTip && (
+        <View style={styles.weatherCard}>
+          <Text style={styles.weatherLabel}>🌤️ Weather Check</Text>
+          <Text style={styles.weatherText}>{rating.weatherTip}</Text>
+        </View>
+      )}
+
       {rating.celebrityMatch && (
         <View style={styles.celebrityCard}>
           <Text style={styles.celebrityLabel}>Your style matches</Text>
@@ -261,6 +268,17 @@ export default function ResultsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F0F1A' },
   content: { paddingBottom: 40 },
+  weatherCard: {
+    marginHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: '#1A1A2E',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#2A6C8C',
+  },
+  weatherLabel: { color: '#5BC4E8', fontSize: 13, fontWeight: '600', marginBottom: 6 },
+  weatherText: { color: '#D0D0E8', fontSize: 15, lineHeight: 22 },
   celebrityCard: {
     marginHorizontal: 24,
     marginBottom: 20,

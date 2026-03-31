@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { rateOutfit } from '../services/api';
@@ -59,8 +60,18 @@ export default function HomeScreen() {
 
   async function analyzeOutfit(uri: string) {
     setLoading(true);
+    let coords: { lat: number; lon: number } | undefined;
     try {
-      const response = await rateOutfit(uri, language, occasion);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        coords = { lat: loc.coords.latitude, lon: loc.coords.longitude };
+      }
+    } catch {
+      // location is optional, continue without it
+    }
+    try {
+      const response = await rateOutfit(uri, language, occasion, coords);
       if (response.success && response.data) {
         navigation.navigate('Results', { rating: response.data, photoUri: uri });
       } else {
